@@ -7,14 +7,25 @@ object ParseJson extends {
 	def eitherSkus(input: String) = Parse.decodeEither[SkuDb](input)
 }
 
+//how to create a flat json object of unknown length
+//how to create a codec for an object that has distinc key names for each sku object?
+//perhaps this is the wrong tool.
+//perhaps reading in the data is the primary project?
+
 case class SkuDb(
-          value: JsonObj[Sku]
-        )
+          //List[]
+					principal: Int,
+					upfrontFee: Value,
+					upfrontCreditlineFee: Value,
+					schedule: List[Payback])
 
 case class upfrontFee(value: Value)
 case class upfrontCreditlineFee(value: Value)
 case class Value(value: Int)
 case class Payback(id: Int, date: String, principal: Int, interestFee: Int)
+
+
+
 
 object CashFlow {
 	implicit def CashFlowCodecJson: CodecJson[CashFlow] =
@@ -32,11 +43,11 @@ object upfrontCreditlineFee {
 	implicit def upfrontCreditlineFeeCodecJson: CodecJson[upfrontCreditlineFee] =
     casecodec1(upfrontCreditlineFee.apply, upfrontCreditlineFee.unapply)("value")
 }
-object upfrontFee {
-	implicit def upfrontFeeCodecJson: CodecJson[upfrontFee] =
+object sku {
+	implicit def skuCodecJson: CodecJson[sku] =
     casecodec1(upfrontFee.apply, upfrontFee.unapply)("value")
 }
-object Payback {
-	implicit def PaybackCodecJson: CodecJson[Payback] =
-    casecodec4(Payback.apply, Payback.unapply)("id", "date", "principal", "interestFee")
+object skuDb {
+	implicit def skuDbCodecJson: CodecJson[skuDb] =
+    casecodec(Payback.apply, Payback.unapply)("id", "date", "principal", "interestFee")
 }
