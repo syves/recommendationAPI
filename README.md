@@ -44,3 +44,5 @@ tgz file containing solution with simple instructions how to run data import and
 - weight is determined by the starting char of the first sku's value, from left to right, then by the int following the sku's value before the next sku's value's starting char.
 
 - Look up by Key sequentially is fast, across the entire db.
+
+- elements are sorted by the attr's alpha: char, then by its number, followed by the next attr.
