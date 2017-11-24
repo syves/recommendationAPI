@@ -21,19 +21,19 @@ object RecommendationUtils extends App {
 
 //some of map[string, string] or None
  //val optionSkus: Option[Any] = JSON.parseFull(input)
- def randomTargetSku: Sku = {
+ def randomTargetSku: String = {
    val rand = new scala.util.Random()
    val randInt = math.abs(rand.nextInt(10000))
    val prefix = "sku-" + randInt.toString
-   Sku(prefix)
+   prefix
  }
 
  //map containing one record.
- def chooseRandomTarget(sku: Sku, skuDb: Map[String, Map[String, String]]): Map[Sku, Map[Attribute, Description]] = {
+ def chooseRandomTarget(sku: String, skuDb: Map[String, Map[String, String]]): Map[String, Map[String, String]] = {
    //make me a new map with one item
-   skuDb.get(sku.value) match {
+   skuDb.get(sku) match {
      //wrap strings in types.
-     case Some(res) => Map(sku -> res.flatMap{ case (attr, desc) => Map(Attribute(attr) -> Description(desc)) })
+     case Some(res) => Map(sku -> res.flatMap{ case (attr, desc) => Map(attr -> desc) })
      //Is there a case where this will run indefinitely? perhaps the data is different form example.
      case None      => chooseRandomTarget(randomTargetSku, skuDb)
    }
