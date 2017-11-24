@@ -3,7 +3,6 @@ import scalaz.concurrent.{Task, Strategy}
 import scalaz._, Scalaz._
 import scala.util.parsing.json._
 
-import ParseJson._
 import RecommendationService._
 import math.Random._
 
@@ -21,7 +20,7 @@ val input = """{
   }"""
 
 //some of map[string, string] or None
- val OptionSkus: Option[Any] = JSON.parseFull(input)
+ val optionSkus: Option[Any] = JSON.parseFull(input)
 
 def randomTargetSku: Sku =
   val rand = new scala.util.Random()
@@ -43,7 +42,8 @@ def chooseRandomTarget(sku: Sku, skuDb: Map[String, Map[String, String]]): Map[S
 //Q: filter map for results that are not a match at all? but what if there are no good matches?
 //def isSameCategory desc.startsWith(attr)
 //Map[String, Map[String, String]]
-  def sortByWeight(target: Map[Sku, Map[Attribute, Descprition]], jsonRes: Option[Any]): Option[Any] = {
+/*
+  def sortByWeight(target: Map[Sku, Map[Attribute, Descprition]], jsonRes: Option[Any]): ? = {
 
     val partedTarg = partedAttrs(target)
 
@@ -53,7 +53,7 @@ def chooseRandomTarget(sku: Sku, skuDb: Map[String, Map[String, String]]): Map[S
 
           //get target attrs sort elements
           val(skuName, attrMap) = skuMap;
-          
+
           val partedAttributes = attrMap.map{ case (attr, descr) =>
             val AttrMap = skuMap(skuName)
             partedAttrs(targAttrMap)
@@ -66,6 +66,7 @@ def chooseRandomTarget(sku: Sku, skuDb: Map[String, Map[String, String]]): Map[S
      None => None
    }
 }
+*/
 
 //original Map does not have type wrappers
 def partedAttrs(map: Map[Any, Any]): Vector[(String, Int)] =

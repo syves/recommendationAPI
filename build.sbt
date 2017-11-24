@@ -11,6 +11,7 @@ libraryDependencies += "org.http4s" %% "http4s-dsl"          % http4sVersion
 libraryDependencies += "org.http4s" %% "http4s-blaze-client" % http4sVersion
 
 //pulls in 7.1.13 and is compatable with http4s
+//TODO replace with scalaz libraryDependency
 libraryDependencies += "io.argonaut" %% "argonaut" % "6.2"
 
 name := "recommendationAPI"
