@@ -19,8 +19,10 @@ object RecommendationUtils extends App {
   "sku-3": {"att-a": "a1", "att-b": "b3", "att-c": "c3"}
   }"""
 
+//maybe I should use argonouat it may be able to give me an Option[Map[String, String]]
 //some of map[string, string] or None
  //val optionSkus: Option[Any] = JSON.parseFull(input)
+
  def randomTargetSku: String = {
    val rand = new scala.util.Random()
    val randInt = math.abs(rand.nextInt(10000))
@@ -39,42 +41,73 @@ object RecommendationUtils extends App {
    }
  }
 
-//Q: filter map for results that are not a match at all? but what if there are no good matches?
-//def isSameCategory desc.startsWith(attr)
-//Map[String, Map[String, String]]
-/*
-  def sortByWeight(target: Map[Sku, Map[Attribute, Descprition]], jsonRes: Option[Any]): ? = {
+//1.Calculate similarity of articles identified by sku based on their (attributes values).
+ //2. The number of (matching attributes) is the most important metric for defining similarity.
+ //2.bIn case of a draw, attributes with name higher in alphabet (a is higher than z) is weighted with heavier weight.
+//Q: is the final weight a total number or a weight for each attribute?
 
-    val partedTarg = partedAttrs(target)
+
+//could return a db of elements with a score, then after sort by score.
+//this seems inefficent. but more composable.
+//TODO find the right term for model
+  case class Score(value: Int)
+  def trueMatch(model: Vector[(String, Int)], suggested: Vector[(String, Int)]): Score = {
+    Score((model intersect suggested).length)
+  }
+
+  val testMap: Map[String, Map[String, String]] = Map(
+    "sku-1" -> Map("att-a" -> "att-a-7","att-b"->"att-b-3","att-c"->"att-c-10","att-d"->"att-d-10"),
+    "sku-2" -> Map("att-a"->"att-a-9","att-b"->"att-b-7","att-c"->"att-c-12","att-d"->"att-d-4"),
+    "sku-3" -> Map("att-a"->"att-a-10","att-b"->"att-b-6","att-c"->"att-c-1","att-d"->"att-d-1"),
+    "sku-4" -> Map("att-a"->"att-a-9","att-b"->"att-b-14","att-c"->"att-c-7","att-d"->"att-d-4"),
+    "sku-5" -> Map("att-a"->"att-a-8","att-b"->"att-b-7","att-c"->"att-c-10","att-d"->"att-d-4"),
+    "sku-6" -> Map("att-a"->"att-a-6","att-b"->"att-b-2","att-c"->"att-c-13","att-d"->"att-d-6"),
+    "sku-7" -> Map("att-a"->"att-a-15","att-b"->"att-b-10","att-c"->"att-c-7","att-d"->"att-d-7"),
+    "sku-8" -> Map("att-a"->"att-a-14","att-b"->"att-b-1","att-c"->"att-c-2","att-d"->"att-d-9"),
+    "sku-9" -> Map("att-a"->"att-a-4","att-b"->"att-b-10","att-c"->"att-c-7","att-d"->"att-d-1"),
+    "sku-10" -> Map("att-a"->"att-a-10","att-b"->"att-b-3","att-c"->"att-c-7","att-d"->"att-d-2"),
+    "sku-11" -> Map("att-a"->"att-a-2","att-b"->"att-b-15","att-c"->"att-c-9","att-d"->"att-d-4"),
+    "sku-12" -> Map("att-a"->"att-a-10","att-b"->"att-b-12","att-c"->"att-c-14","att-d"->"att-d-1"))
+
+  val optionMap = Some(testMap)
+
+  def score(jsonRes: Option[Map[String, Map[String,String]]]): Vector[(Score, Sku, Vector[(String, Int)])] = {
 
     jsonRes match {
-      Some(skuDb) =>
-        skuDb.toSeq.sortWith { skuMap =>
+      case Some(skuDb) =>
+        //select the first element in the db representation as the item we will match for.
+        //how could this be more composable? It might as well be efficient since it is random.
+        var scored = Vector[(Score, Sku, Vector[(String, Int)]()
+        val skuTup = skuDb.head
 
-          //get target attrs sort elements
-          val(skuName, attrMap) = skuMap;
+        val partedMod: Vector[(String, Int)] = partedAttrs(skuTup)
+        //replace with fold? while loop is fastest?
+        skuDb.foreach { skuTup =>
+          val sku = skuTup._1
+          val partedSug = partedAttrs(skuTup)
+          val score = trueMatch(partedMod, partedSug) //Score
+          (score, sku, partedSug ):: scored
+        }
+      case None => Vector[(Score, Sku, Vector[(String, Int)])() //TODO syntax for Empty
+      }
+    }
+    //TODO sort look for context.
+    //TODO take 10
 
-          val partedAttributes = attrMap.map{ case (attr, descr) =>
-            val AttrMap = skuMap(skuName)
-            partedAttrs(targAttrMap)
-          }
-
-         //somehow we compare the values in partedTarget with each sku in JsonRes
-
-       }
-      //is this the way to handle it?
-     None => None
-   }
-}
-*/
 
 //original Map does not have type wrappers
-  def partedAttrs(map: Map[String, String]): Vector[(String, Int)] = {
-    map
+//TODO type alias for return type?
+//TODO do we even need the Int? from example it seems so, but from the readme desc.
+//TODO clarify code test?
+  def partedAttrs(skuTup: (String,  Map[String, Map[String, String]]): Vector[(String, Int)] = {
+    val (skuName, skuMap) = skuTup
+    val attrMap = skuMap(skuName)
+    attrMap
     //TODO replace two steps with a fold?
       .toSeq
       .map{ pair => val(attr, descr) = pair; partitionDescription(attr, descr)}
-      .toVector
+      //is sorting here inefficient?
+      .toVector.sorted
     }
 //this is only reusable if the data takes this shape. where something in the Attribut name matches the decription.
   def partitionDescription(attr: String, descr: String): (String, Int) = {
