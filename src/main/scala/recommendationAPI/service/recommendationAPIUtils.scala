@@ -71,41 +71,60 @@ object RecommendationUtils extends App {
 
   val optionMap = Some(testMap)
 
+  //make return type a type with impicit ordering?
   def score(jsonRes: Option[Map[String, Map[String,String]]]): Vector[(Score, Sku, Vector[(String, Int)])] = {
-
     jsonRes match {
       case Some(skuDb) =>
         //select the first element in the db representation as the item we will match for.
         //how could this be more composable? It might as well be efficient since it is random.
-        var scored = Vector[(Score, Sku, Vector[(String, Int)]()
+        var scored: Vector[ (Score, Sku, Vector[ (String, Int) ]) ] = Vector()
         val skuTup = skuDb.head
-
         val partedMod: Vector[(String, Int)] = partedAttrs(skuTup)
-        //replace with fold? while loop is fastest?
-        skuDb.foreach { skuTup =>
-          val sku = skuTup._1
+        //TODO replace with fold? while loop is fastest?
+
+        //we do not return the model Sku itself as a match.
+        //this relies on the model coming from the db. which it likely would.
+        //TODO maybe spliting the description is unncessesary and we only sort by the attr value?
+        skuDb.tail.foreach { skuTup =>
+          val sku = Sku(skuTup._1)
           val partedSug = partedAttrs(skuTup)
           val score = trueMatch(partedMod, partedSug) //Score
-          (score, sku, partedSug ):: scored
+          scored = scored :+ (score, sku, partedSug )
         }
-      case None => Vector[(Score, Sku, Vector[(String, Int)])() //TODO syntax for Empty
+        //no implicit ordering on a tuple3? move the Tuple3 sorting to a function?
+        scored.sortWith{ case (a, b) =>
+          val (aScore, aSku, aDescrTup) = a; val (bScore, bSku, bDescrTup) = b
+          val (aChar, aNum) = bDescrTup(0); val (bChar, bNum) = bDescrTup(0)
+            //does this cover all the cases?
+            if (aScore == 0 && bScore == 0) {
+              if (aChar != bChar) {
+              //no exact matches, but char Matchers
+                aChar < bChar
+              }else {
+                println("sorting by num")
+                aNum < bNum
+              }
+            } else {
+              aScore.value > bScore.value
+            }
+        }
+      case None => Vector()
       }
     }
+    //remove the model skew from the sorted results
     //TODO sort look for context.
     //TODO take 10
-
 
 //original Map does not have type wrappers
 //TODO type alias for return type?
 //TODO do we even need the Int? from example it seems so, but from the readme desc.
-//TODO clarify code test?
-  def partedAttrs(skuTup: (String,  Map[String, Map[String, String]]): Vector[(String, Int)] = {
-    val (skuName, skuMap) = skuTup
-    val attrMap = skuMap(skuName)
+
+  def partedAttrs(skuTup: (String, Map[String, String])): Vector[(String, Int)] = {
+    val (skuName, attrMap) = skuTup
     attrMap
     //TODO replace two steps with a fold?
       .toSeq
-      .map{ pair => val(attr, descr) = pair; partitionDescription(attr, descr)}
+      .map{ pair => val (attr, descr) = pair; partitionDescription(attr, descr)}
       //is sorting here inefficient?
       .toVector.sorted
     }
@@ -116,20 +135,5 @@ object RecommendationUtils extends App {
     val beta: Int = descr.slice(6,descr.length).toInt
     (alpha, beta)
   }
+  println(score(optionMap))
 }
-
-/*
-
-
-for some sku num, which is a key in a dictionary representing a database. retrieve the key safely.
-If the key exists
-	find the first 10 values of keys that are most similar to the input key.
-	or find the best matches of all the possible matches.
-	*speed ? divide the db into sections? and search in parallel for good matches? then
-	sort good matches?
-
-	what is a weight and how to show it,
-
-	def weight
-	def match
-*/

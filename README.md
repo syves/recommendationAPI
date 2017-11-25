@@ -24,8 +24,7 @@ Example 2:
 ** Recommendation request example
 sku-123  > ENGINE > 10 most similar skus based on criteria described above with their corresponding weights.
 
-## "sku-123":{"att-a":"att-a-2","att-b":"att-b-13","att-c":"att-c-7","att-d":"att-d-1","att-e":"att-e-7","att-f":"att-f-10","att-g":"att-g-1","att-h":"att-h-8","att-i":"att-i-7","att-j":"att-j-1"},
-
+## 
 ** Language requirements
 Use any language you feel comfortable with
 
