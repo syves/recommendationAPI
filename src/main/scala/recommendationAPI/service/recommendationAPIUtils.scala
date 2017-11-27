@@ -10,41 +10,41 @@ object RecommendationUtils {
   case class Sku(value: String)
   case class Score(value: Int)
   case class AttrVal(value: String)
+  case class AttrKey(value: String)
 
-  def trueMatch(model: Vector[AttrVal], suggested: Vector[AttrVal]): Score = Score((model intersect suggested).length)
+  //This funtion is safe because it relies on the current shape of the data having prefixes
+  // and cross collumn matches are not possible.
 
-  def mapToAttrs(m: Map[String, String]): Vector[AttrVal] = m.toVector.sorted.map(tup => AttrVal(tup._2))
+  //TODO return option of vector
+  //TODO filter out sku
+  //TODO return the weight
+  def scored(sku: Sku, skuDb: Map[Sku, Map[AttrKey, AttrVal]]): Vector[(Sku, Score, List[AttrVal])] = {
+    //TODO change to get or else
+    val pastAttrMap = skuDb(sku)
+    val pastAttrVals = pastAttrMap.toList.sortBy(t => t._1.value).map(_._2)
 
-  def scored(jsonRes: Option[Map[String, Map[String, String]]]): Vector[(Score, Sku, Vector[AttrVal])] = {
-    jsonRes match {
-      case Some(skuDb) =>
-        var scored: Vector[ (Score, Sku, Vector[AttrVal]) ] = Vector()
-        //The directions did not include the source of the item to be matched.
-        // I've chosen to take the first item from the db representation.
-        val pastPurchase = skuDb.head
-        val (pastSku, pastAttrMap) = pastPurchase
-        val purchasedAttrs = mapToAttrs(pastAttrMap)
-        //TODO replace with fold? while loop is fastest?
-        skuDb.tail.foreach { skuTup =>
-          val (skuName, attrMap)  = skuTup
-          val attrs = mapToAttrs(attrMap)
-          val score = trueMatch(purchasedAttrs, attrs)
-          scored = scored :+ (score, Sku(skuName), attrs)
-        }
-        scored.sortWith{ case (a, b) =>
-          val (aScore, aSku, aVals) = a; val (bScore, bSku, bVals) = b
-            if (aScore.value == 0 && bScore.value == 0 )
-              aVals.zip(bVals).forall { case (x, y) => x.value < y.value }
-            else
-              aScore.value > bScore.value
-            }
-      case None => Vector()
+    val scored = skuDb.foldLeft(Vector[(Sku, Score, List[AttrVal])]()) { (z, skuTup) =>
+
+      val (skuName, attrMap)  = skuTup
+      if (skuName == sku){
+        z
+      } else {
+        val attrVals = attrMap.toList.sortBy(t => t._1.value).map(_._2)
+        val matches = pastAttrVals.zip(attrVals).map { tup => tup._1 == tup._2 }
+        val score = matches.filter(x => x).length
+
+        z :+ (skuName, Score(score), attrVals)
       }
     }
 
-  def getRecommendations(scored: Vector[(Score, Sku, Vector[AttrVal])], numRec: Int): Vector[(Score, Sku, Vector[AttrVal])] = {
-    if (scored.length >= numRec) scored.take(numRec) else scored
+    scored.sortBy{ tup3 =>
+      val (sku, score, attrVals) = tup3
+      val matches = pastAttrVals.zip(attrVals).map { tup => tup._1 == tup._2 }
+      //TOdo change sort to ascending
+      (-score.value, matches.foldLeft("")((z,a)=> z + (if (a) "a" else "b")))
+    }
   }
+
 /*
   def :+(fj: (JsonString, Json), obj: Json): JsonObject = {
     obj +
