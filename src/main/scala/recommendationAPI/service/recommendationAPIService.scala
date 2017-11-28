@@ -10,7 +10,7 @@ object RecommendationService extends App {
 
   args match {
 
-    case Array(sku, filePath, numRecords) =>
+    case Array(sku, filePath, numRecords_) =>
       val file = scala.io.Source.fromFile(filePath)
       val str = file.mkString
       file.close
@@ -22,17 +22,22 @@ object RecommendationService extends App {
             Sku(sku) -> attrs.map{ map =>
               val (key, value) = map
               AttrKey(key) -> AttrVal(value)}
-            }
+          }
 
-          //validate numRecords ..regex
-          val resultNum: Int = math.min(numRecords.toInt, skus.length)
-          val safeTake = scored(Sku(sku), skus).take(resultNum)
-          //Return Json?
-          println(s"Based on your past purchase you may like: ${safeTake.toString}")
+          val numRecords = toInt(numRecords_).getOrElse(0)
+          val resultNum: Int = math.min(numRecords, skus.length)
+          val res = scored(Sku(sku), skus)
+
+          res match {
+            case Right(res) => val safeTake = res.take(resultNum)
+                               println(s"Based on your past purchase you may like: ${resToJson(safeTake, skus)}")
+                              //add a non zero exit code
+            case Left(err) => println(res)
+          }
+
         //add a non zero exit code
         case None => println("Invalid Json file.")
       }
-    //add a non zero exit code
     case _ => println("sbt run <sku> <filePath> <numRecords>")
   }
 
