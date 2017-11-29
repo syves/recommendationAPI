@@ -24,7 +24,7 @@ Example 2:
 ** Recommendation request example
 sku-123  > ENGINE > 10 most similar skus based on criteria described above with their corresponding weights.
 
-## 
+##
 ** Language requirements
 Use any language you feel comfortable with
 
@@ -34,17 +34,6 @@ Clean structured reusable code
 ** Expected delivery format
 tgz file containing solution with simple instructions how to run data import and how to execute recommendation request
 
-## Assumptions ----------------
-- Data will be stored in a database where each 'sku' represents a record's key.
-
-- Data will be unstructured. Each 'sku' could contain 0+ categories and 10+ distinct variations for each field category. And if a new product is added they new product could have more variations that no other product has yet, Perhaps the old models will not have an optional field that one can compare to.
-
-- Data could contain keys with optional values, null(hopefully not), or simply make no reference to a category.
-
-- Some fields may not be present so comparison operations should be safe.
-
-- weight is determined by the starting char of the first sku's value, from left to right, then by the int following the sku's value before the next sku's value's starting char.
-
-- Look up by Key sequentially is fast, across the entire db.
-
-- elements are sorted by the attr's alpha: char, then by its number, followed by the next attr.
+## TO run this file
+sbt 'run <sku> <filePath> <numRecords>'
+sbt test 
