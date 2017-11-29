@@ -1,7 +1,4 @@
 import scalaz._, Scalaz._
-import argonaut._, Argonaut._
-import argonaut.JsonObject._
-import argonaut.Json._
 import scala.io.Source._
 
 object RecommendationService extends App {
@@ -15,9 +12,12 @@ object RecommendationService extends App {
       val numRecords = toInt(numRecords_).getOrElse(0)
 
       decode(str).flatMap{ db => score(Sku(sku), db)} match {
-        case Left(err)  => println(err)
+        case Left(err)   => println(err)
+                            sys.exit(1)
         case Right(skus) => println(resToJson(skus.take(numRecords)))
       }
+
     case _ => println("sbt 'run <sku> <filePath> <numRecords>'")
+              sys.exit(1)
   }
 }

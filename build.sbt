@@ -11,4 +11,4 @@ libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.17"
 
 name := "recommendationAPI"
 
-scalaVersion := "2.12.0"
+scalaVersion := "2.12.3"
