@@ -21,7 +21,6 @@ class recommendationAPISpec extends FlatSpec with Matchers {
       Sku("sku-12") -> Map(AttrKey("att-a")->AttrVal("att-a-10"),AttrKey("att-b")->AttrVal("att-b-12"),AttrKey("att-c")->AttrVal("att-c-14"),AttrKey("att-d")->AttrVal("att-d-1")))
 
     val pastPurchase = Sku("sku-1")
-    //??
     val actual = score(pastPurchase, testMap).right.get.take(2)
     val expected = Vector(
       (Sku("sku-10"),

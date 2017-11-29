@@ -16,10 +16,10 @@ object RecommendationUtils {
       ("attributes", r.attrs.map { case (k, v) => k.value -> v.value }.asJson) ->:
       jEmptyObject
     )
+    
   implicit def SkuEncodeJson: EncodeJson[Sku] =
     EncodeJson((s: Sku) => s.value.asJson)
 
-  //TODO remove or fix usesage
   implicit def AttrKeyEncodeJson: EncodeJson[AttrKey] =
     EncodeJson((a: AttrKey) => a.value.asJson)
 
@@ -35,18 +35,13 @@ object RecommendationUtils {
   }
 
   def decode(str: String): Either[String, Map[Sku, Map[AttrKey, AttrVal]]] = {
-    Parse.decodeOption[Map[String, Map[String, String]]](str) match {
-      case Some(skus_) =>
-      //typing
-        val map = skus_.foldLeft(Map[Sku, Map[AttrKey, AttrVal]]()){ (z, pair) =>
-          val (sku, attrs) = pair
-          z + (Sku(sku) -> attrs.map{ case (k, v) =>  AttrKey(k) -> AttrVal(v)})
-        }
-        Right(map)
-
-      case None => Left("Invalid Json file.")
+    Parse.decodeEither[Map[String, Map[String, String]]](str).map{skus =>
+      skus.foldLeft(Map[Sku, Map[AttrKey, AttrVal]]()){ (z, pair) =>
+        val (sku, attrs) = pair
+        z + (Sku(sku) -> attrs.map{ case (k, v) =>  AttrKey(k) -> AttrVal(v)})
+      }
+    }
   }
-}
   //This funtion is safe because it relies on the current shape of the data having prefixes
   // and cross collumn matches are not possible.
   def score(sku: Sku, skuDb: Map[Sku, Map[AttrKey, AttrVal]]): Either[String, Vector[(Sku, Score, Map[AttrKey, AttrVal])]] = {
@@ -54,23 +49,22 @@ object RecommendationUtils {
       case Some(pastMap) =>
         val pastAttrVals =  pastMap.toList.sortBy(t => t._1.value).map(_._2)
 
-        val scored_ = skuDb.foldLeft(Vector[(Sku, Score, List[AttrVal])]()) { (z, skuTup) =>
-          val (skuName, attrMap)  = skuTup
-            if (skuName == sku){
+        val scored_ = skuDb.foldLeft( Vector[ ( (Int, String), (Sku, Score, Map[AttrKey, AttrVal]) ) ]() ) { (z, skuTup) =>
+          val (sku_, attrMap)  = skuTup
+            if (sku_ == sku){
               z
             } else {
               val attrVals = attrMap.toList.sortBy(t => t._1.value).map(_._2)
               val matches = pastAttrVals.zip(attrVals).map { tup => tup._1 == tup._2 }
               val score = matches.filter(x => x).length
-              z :+ (skuName, Score(score), attrVals)
-            }
-        }.sortBy{ tup3 =>
-          val (sku, score, attrVals) = tup3
-          val matches = pastAttrVals.zip(attrVals).map { tup => tup._1 == tup._2 }
-          (-score.value, matches.foldLeft("")((z,a)=> z + (if (a) "a" else "b")))
-        }
+              val matchString = matches.foldLeft(""){(z,a)=> z + (if (a) "a" else "b") }
+              val comparator = (-score, matchString)
 
-        Right(scored_.map{tup3 => val (sku, score, _) = tup3; (sku, score, skuDb(sku))})
+              z :+ ( comparator, (sku_, Score(score), attrMap) )
+            }
+        }.sortBy{ _._1 }
+
+        Right(scored_.map{ _._2 })
       case None => Left("The Sku provided was not found")
     }
   }
